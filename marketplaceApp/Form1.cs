@@ -1,0 +1,100 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace marketplaceApp
+{
+    public partial class Form1 : Form
+    {
+        private DatabaseHelper dbHelper = new DatabaseHelper();
+        public Form1()
+        {
+            InitializeComponent();
+            this.CenterToScreen();
+            this.SetGradientBackground(
+                Color.FromArgb(255, 183, 77), 
+                Color.FromArgb(255, 138, 101) 
+            );
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string email = textBox1.Text;
+            string password = textBox2.Text;
+
+            try
+            {
+                using (var connection = dbHelper.GetConnection())
+                {
+                    connection.Open();
+                    string query = "SELECT ID_пользователя, ФИО FROM Пользователи WHERE ЭлектроннаяПочта = @Email AND Пароль = @Password";
+
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@Email", email);
+                        command.Parameters.AddWithValue("@Password", password);
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int userId = reader.GetInt32(0);
+                                string userName = reader.GetString(1);
+
+                                MessageBox.Show($"Добро пожаловать, {userName}!");
+
+                                // Сохраняем ID пользователя для использования в других формах
+                                UserSession.CurrentUserID = userId;
+                                UserSession.CurrentUserName = userName;
+
+                                Navigation mainForm = new Navigation();
+                                mainForm.Show();
+                                this.Hide();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Неверный email или пароль");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка входа: " + ex.Message);
+            }
+        }
+
+        private void label4_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.Hide();
+            Form2 form2 = new Form2();
+            form2.Show();
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+        }
+    }
+}
