@@ -1,21 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SqlClient;
-using System.Data;
+using System.Configuration;
 
 public class DatabaseHelper
 {
-    private string connectionString = @"Data Source=FAFLA666\SQLEXPRESS;Initial Catalog=MarketplaceDB;Integrated Security=True;";
+    private string GetConnectionString()
+    {
+        string mode = ConfigurationManager.AppSettings["AppMode"];
+
+        if (mode == "Production")
+            return ConfigurationManager.ConnectionStrings["MarketplaceDB_Prod"].ConnectionString;
+
+        return ConfigurationManager.ConnectionStrings["MarketplaceDB_Dev"].ConnectionString;
+    }
 
     public SqlConnection GetConnection()
     {
-        return new SqlConnection(connectionString);
+        return new SqlConnection(GetConnectionString());
     }
 
-    // Проверка подключения
     public bool TestConnection()
     {
         try

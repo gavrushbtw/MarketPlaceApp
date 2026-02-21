@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -13,7 +14,7 @@ namespace marketplaceApp
 {
     public partial class Form1 : Form
     {
-        private DatabaseHelper dbHelper = new DatabaseHelper();
+        DatabaseHelper db = new DatabaseHelper();
         public Form1()
         {
             InitializeComponent();
@@ -31,6 +32,7 @@ namespace marketplaceApp
 
         private void label1_Click(object sender, EventArgs e)
         {
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -40,7 +42,7 @@ namespace marketplaceApp
 
             try
             {
-                using (var connection = dbHelper.GetConnection())
+                using (SqlConnection connection = db.GetConnection())
                 {
                     connection.Open();
                     string query = "SELECT ID_пользователя, ФИО FROM Пользователи WHERE ЭлектроннаяПочта = @Email AND Пароль = @Password";

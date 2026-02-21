@@ -13,6 +13,7 @@ namespace marketplaceApp
 {
     public partial class ProfileForm : Form
     {
+        DatabaseHelper db = new DatabaseHelper();
         public ProfileForm()
         {
             InitializeProfile();
@@ -41,7 +42,7 @@ namespace marketplaceApp
         {
             try
             {
-                using (var connection = new SqlConnection(@"Data Source=FAFLA666\SQLEXPRESS;Initial Catalog=MarketplaceDB;Integrated Security=True;"))
+                using (SqlConnection connection = db.GetConnection())
                 {
                     connection.Open();
                     string query = "SELECT ФИО, ЭлектроннаяПочта, Адрес, Телефон FROM Пользователи WHERE ID_пользователя = @UserID";

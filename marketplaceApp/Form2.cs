@@ -13,7 +13,7 @@ namespace marketplaceApp
 {
     public partial class Form2 : Form
     {
-        private DatabaseHelper dbHelper = new DatabaseHelper();
+        DatabaseHelper db = new DatabaseHelper();
         public Form2()
         {
             InitializeComponent();
@@ -60,7 +60,7 @@ namespace marketplaceApp
 
             try
             {
-                using (var connection = dbHelper.GetConnection())
+                using (SqlConnection connection = db.GetConnection())
                 {
                     connection.Open();
                     string query = @"INSERT INTO Пользователи (ЭлектроннаяПочта, Пароль, ФИО, Адрес) 

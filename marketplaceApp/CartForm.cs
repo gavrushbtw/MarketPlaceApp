@@ -16,6 +16,7 @@ namespace marketplaceApp
     {
         private ListView cartList;
         private Label totalLabel;
+        DatabaseHelper db = new DatabaseHelper();
 
         public CartForm()
         {
@@ -90,8 +91,7 @@ namespace marketplaceApp
             {
                 cartList.Items.Clear();
                 decimal totalAmount = 0;
-
-                using (var connection = new SqlConnection(@"Data Source = FAFLA666\SQLEXPRESS; Initial Catalog = MarketplaceDB; Integrated Security = True; "))
+                using (var connection = db.GetConnection())
                 {
                     connection.Open();
                     string query = @"SELECT т.НазваниеТовара, т.Цена, к.Количество, (т.Цена * к.Количество) as Сумма
@@ -123,6 +123,7 @@ namespace marketplaceApp
                         }
                     }
                 }
+
 
                 totalLabel.Text = $"Итого: {totalAmount} руб.";
             }

@@ -8,6 +8,7 @@ using System.Windows.Forms;
 public partial class CatalogForm : Form
 {
     private FlowLayoutPanel productsPanel;
+    DatabaseHelper db = new DatabaseHelper();
 
     public CatalogForm()
     {
@@ -46,28 +47,31 @@ public partial class CatalogForm : Form
 
     private void LoadProductsFromDatabase()
     {
-        SqlConnection connection = null;
         SqlCommand command = null;
         SqlDataReader reader = null;
 
         try
         {
-            connection = new SqlConnection(@"Data Source=FAFLA666\SQLEXPRESS;Initial Catalog=MarketplaceDB;Integrated Security=True;");
-            connection.Open();
-
-            string query = "SELECT ID_товара, НазваниеТовара, Описание, Цена, СсылкаНаИзображение FROM Товары";
-            command = new SqlCommand(query, connection);
-            reader = command.ExecuteReader();
-
-            while (reader.Read())
+            using (SqlConnection connection = db.GetConnection())
             {
-                int productId = reader.GetInt32(0);
-                string productName = reader.GetString(1);
-                string description = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                decimal price = reader.GetDecimal(3);
-                string imageUrl = reader.IsDBNull(4) ? "" : reader.GetString(4);
+                connection.Open();
 
-                productsPanel.Controls.Add(CreateProductCard(productId, productName, description, price, imageUrl));
+                string query = "SELECT ID_товара, НазваниеТовара, Описание, Цена, СсылкаНаИзображение FROM Товары";
+                command = new SqlCommand(query, connection);
+                reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    int productId = reader.GetInt32(0);
+                    string productName = reader.GetString(1);
+                    string description = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                    decimal price = reader.GetDecimal(3);
+                    string imageUrl = reader.IsDBNull(4) ? "" : reader.GetString(4);
+
+                    productsPanel.Controls.Add(
+                        CreateProductCard(productId, productName, description, price, imageUrl)
+                    );
+                }
             }
         }
         catch (Exception ex)
@@ -77,12 +81,9 @@ public partial class CatalogForm : Form
         }
         finally
         {
-            // Правильное освобождение ресурсов
             reader?.Close();
             reader?.Dispose();
             command?.Dispose();
-            connection?.Close();
-            connection?.Dispose();
         }
     }
 
@@ -160,41 +161,39 @@ public partial class CatalogForm : Form
 
     private void AddToCart(int productId)
     {
-        SqlConnection connection = null;
         SqlCommand checkCommand = null;
         SqlCommand updateCommand = null;
         SqlCommand insertCommand = null;
 
         try
         {
-            connection = new SqlConnection(@"Data Source=FAFLA666\SQLEXPRESS;Initial Catalog=MarketplaceDB;Integrated Security=True;");
-            connection.Open();
-
-            // Проверяем, есть ли товар в корзине
-            string checkQuery = "SELECT ID_корзины FROM Корзина WHERE ID_пользователя = @UserId AND ID_товара = @ProductId";
-            checkCommand = new SqlCommand(checkQuery, connection);
-            checkCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
-            checkCommand.Parameters.AddWithValue("@ProductId", productId);
-
-            var result = checkCommand.ExecuteScalar();
-
-            if (result != null)
+            using (SqlConnection connection = db.GetConnection())
             {
-                // Увеличиваем количество
-                string updateQuery = "UPDATE Корзина SET Количество = Количество + 1 WHERE ID_пользователя = @UserId AND ID_товара = @ProductId";
-                updateCommand = new SqlCommand(updateQuery, connection);
-                updateCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
-                updateCommand.Parameters.AddWithValue("@ProductId", productId);
-                updateCommand.ExecuteNonQuery();
-            }
-            else
-            {
-                // Добавляем новый товар
-                string insertQuery = "INSERT INTO Корзина (ID_пользователя, ID_товара, Количество) VALUES (@UserId, @ProductId, 1)";
-                insertCommand = new SqlCommand(insertQuery, connection);
-                insertCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
-                insertCommand.Parameters.AddWithValue("@ProductId", productId);
-                insertCommand.ExecuteNonQuery();
+                connection.Open();
+
+                string checkQuery = "SELECT ID_корзины FROM Корзина WHERE ID_пользователя = @UserId AND ID_товара = @ProductId";
+                checkCommand = new SqlCommand(checkQuery, connection);
+                checkCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
+                checkCommand.Parameters.AddWithValue("@ProductId", productId);
+
+                var result = checkCommand.ExecuteScalar();
+
+                if (result != null)
+                {
+                    string updateQuery = "UPDATE Корзина SET Количество = Количество + 1 WHERE ID_пользователя = @UserId AND ID_товара = @ProductId";
+                    updateCommand = new SqlCommand(updateQuery, connection);
+                    updateCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
+                    updateCommand.Parameters.AddWithValue("@ProductId", productId);
+                    updateCommand.ExecuteNonQuery();
+                }
+                else
+                {
+                    string insertQuery = "INSERT INTO Корзина (ID_пользователя, ID_товара, Количество) VALUES (@UserId, @ProductId, 1)";
+                    insertCommand = new SqlCommand(insertQuery, connection);
+                    insertCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
+                    insertCommand.Parameters.AddWithValue("@ProductId", productId);
+                    insertCommand.ExecuteNonQuery();
+                }
             }
 
             MessageBox.Show("Товар добавлен в корзину!");
@@ -205,12 +204,9 @@ public partial class CatalogForm : Form
         }
         finally
         {
-            // Освобождаем ресурсы
             checkCommand?.Dispose();
             updateCommand?.Dispose();
             insertCommand?.Dispose();
-            connection?.Close();
-            connection?.Dispose();
         }
     }
 
