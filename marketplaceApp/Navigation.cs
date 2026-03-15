@@ -24,6 +24,16 @@ namespace marketplaceApp
 
         private void CreateNavigation()
         {
+            Label welcomeLabel = new Label()
+            {
+                Text = $"Привет, {UserSession.CurrentUserName}!",
+                Font = new Font("Segoe UI", 11, FontStyle.Italic),
+                BackColor = Color.Transparent,
+                ForeColor = Color.White,
+                Size = new Size(250, 30),
+                Location = new Point(75, 70)
+            };
+            this.Controls.Add(welcomeLabel);
             this.Text = "Маркетплейс Хозтоваров";
             this.Width = 400;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -54,7 +64,7 @@ namespace marketplaceApp
             }
 
             buttons.Add("🚪 Выход");
-            int y = 100;
+            int y = 0;
 
             foreach (string btnText in buttons)
             {
