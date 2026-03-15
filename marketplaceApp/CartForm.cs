@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -84,9 +85,10 @@ namespace marketplaceApp
             this.Controls.AddRange(new Control[] { title, cartList, totalLabel, checkoutBtn });
         }
 
-        // ✅ Метод загрузки корзины из БД
+        // Метод загрузки корзины из БД
         private void LoadCartFromDatabase()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 cartList.Items.Clear();
@@ -94,16 +96,16 @@ namespace marketplaceApp
                 using (var connection = db.GetConnection())
                 {
                     connection.Open();
-                    string query = @"SELECT т.НазваниеТовара, т.Цена, к.Количество, (т.Цена * к.Количество) as Сумма
-                               FROM Корзина к
-                               JOIN Товары т ON к.ID_товара = т.ID_товара
-                               WHERE к.ID_пользователя = @UserID";
+                    string query = @"SELECT т.""НазваниеТовара"", т.""Цена"", к.""Количество"", (т.""Цена"" * к.""Количество"") as Сумма
+                                    FROM ""Корзина"" к
+                                    JOIN ""Товары"" т ON к.""ID_товара"" = т.""ID_товара""
+                                    WHERE к.""ID_пользователя"" = @UserID";
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    using (NpgsqlCommand command = new NpgsqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@UserID", UserSession.CurrentUserID);
 
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        using (NpgsqlDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
@@ -124,7 +126,8 @@ namespace marketplaceApp
                     }
                 }
 
-
+                sw.Stop();
+                Logger.Log($"Время загрузки корзины: {sw.ElapsedMilliseconds} мс");
                 totalLabel.Text = $"Итого: {totalAmount} руб.";
             }
             catch (Exception ex)

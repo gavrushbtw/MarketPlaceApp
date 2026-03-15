@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -113,12 +114,12 @@ namespace marketplaceApp
         {
             try
             {
-                using (SqlConnection connection = db.GetConnection())
+                using (NpgsqlConnection connection = db.GetConnection())
                 {
                     connection.Open();
-                    string query = "SELECT Адрес FROM Пользователи WHERE ID_пользователя = @UserID";
+                    string query = "SELECT \"Адрес\" FROM \"Пользователи\" WHERE \"ID_пользователя\" = @UserID";
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    using (NpgsqlCommand command = new NpgsqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@UserID", UserSession.CurrentUserID);
                         var result = command.ExecuteScalar();

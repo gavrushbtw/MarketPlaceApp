@@ -90,11 +90,11 @@
             this.label3.BackColor = System.Drawing.Color.Transparent;
             this.label3.Font = new System.Drawing.Font("Tahoma", 16.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.label3.ForeColor = System.Drawing.Color.White;
-            this.label3.Location = new System.Drawing.Point(83, 181);
+            this.label3.Location = new System.Drawing.Point(74, 181);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(75, 34);
+            this.label3.Size = new System.Drawing.Size(84, 34);
             this.label3.TabIndex = 13;
-            this.label3.Text = "Имя";
+            this.label3.Text = "ФИО";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // label2

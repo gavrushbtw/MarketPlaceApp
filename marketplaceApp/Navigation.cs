@@ -48,7 +48,7 @@ namespace marketplaceApp
             };
 
             // Кнопка админ-панели только для Admin
-            if (UserSession.CurrentUserRole == "Admin")
+            if (UserSession.CurrentUserRole == "Администратор")
             {
                 buttons.Add("⚙ Панель администратора");
             }

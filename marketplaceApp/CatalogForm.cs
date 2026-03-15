@@ -1,4 +1,5 @@
 ﻿using marketplaceApp;
+using Npgsql;
 using System;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -47,17 +48,18 @@ public partial class CatalogForm : Form
 
     private void LoadProductsFromDatabase()
     {
-        SqlCommand command = null;
-        SqlDataReader reader = null;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        NpgsqlCommand command = null;
+        NpgsqlDataReader reader = null;
 
         try
         {
-            using (SqlConnection connection = db.GetConnection())
+            using (NpgsqlConnection connection = db.GetConnection())
             {
                 connection.Open();
 
-                string query = "SELECT ID_товара, НазваниеТовара, Описание, Цена, СсылкаНаИзображение FROM Товары";
-                command = new SqlCommand(query, connection);
+                string query = "SELECT \"ID_товара\", \"НазваниеТовара\", \"Описание\", \"Цена\", \"СсылкаНаИзображение\" FROM \"Товары\"";
+                command = new NpgsqlCommand(query, connection);
                 reader = command.ExecuteReader();
 
                 while (reader.Read())
@@ -72,6 +74,8 @@ public partial class CatalogForm : Form
                         CreateProductCard(productId, productName, description, price, imageUrl)
                     );
                 }
+                sw.Stop();
+                Logger.Log($"Время загрузки каталога: {sw.ElapsedMilliseconds} мс");
             }
         }
         catch (Exception ex)
@@ -161,53 +165,47 @@ public partial class CatalogForm : Form
 
     private void AddToCart(int productId)
     {
-        SqlCommand checkCommand = null;
-        SqlCommand updateCommand = null;
-        SqlCommand insertCommand = null;
-
         try
         {
-            using (SqlConnection connection = db.GetConnection())
+            using (NpgsqlConnection connection = db.GetConnection())
             {
                 connection.Open();
 
-                string checkQuery = "SELECT ID_корзины FROM Корзина WHERE ID_пользователя = @UserId AND ID_товара = @ProductId";
-                checkCommand = new SqlCommand(checkQuery, connection);
-                checkCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
-                checkCommand.Parameters.AddWithValue("@ProductId", productId);
-
-                var result = checkCommand.ExecuteScalar();
-
-                if (result != null)
+                string checkQuery = "SELECT \"ID_корзины\" FROM \"Корзина\" WHERE \"ID_пользователя\" = @UserId AND \"ID_товара\" = @ProductId";
+                using (NpgsqlCommand checkCommand = new NpgsqlCommand(checkQuery, connection))
                 {
-                    string updateQuery = "UPDATE Корзина SET Количество = Количество + 1 WHERE ID_пользователя = @UserId AND ID_товара = @ProductId";
-                    updateCommand = new SqlCommand(updateQuery, connection);
-                    updateCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
-                    updateCommand.Parameters.AddWithValue("@ProductId", productId);
-                    updateCommand.ExecuteNonQuery();
-                }
-                else
-                {
-                    string insertQuery = "INSERT INTO Корзина (ID_пользователя, ID_товара, Количество) VALUES (@UserId, @ProductId, 1)";
-                    insertCommand = new SqlCommand(insertQuery, connection);
-                    insertCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
-                    insertCommand.Parameters.AddWithValue("@ProductId", productId);
-                    insertCommand.ExecuteNonQuery();
+                    checkCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
+                    checkCommand.Parameters.AddWithValue("@ProductId", productId);
+                    var result = checkCommand.ExecuteScalar();
+
+                    if (result != null)
+                    {
+                        string updateQuery = "UPDATE \"Корзина\" SET \"Количество\" = \"Количество\" + 1 WHERE \"ID_пользователя\" = @UserId AND \"ID_товара\" = @ProductId";
+                        using (NpgsqlCommand updateCommand = new NpgsqlCommand(updateQuery, connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
+                            updateCommand.Parameters.AddWithValue("@ProductId", productId);
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        string insertQuery = "INSERT INTO \"Корзина\" (\"ID_пользователя\", \"ID_товара\", \"Количество\") VALUES (@UserId, @ProductId, 1)";
+                        using (NpgsqlCommand insertCommand = new NpgsqlCommand(insertQuery, connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@UserId", UserSession.CurrentUserID);
+                            insertCommand.Parameters.AddWithValue("@ProductId", productId);
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
                 }
             }
-
             MessageBox.Show("Товар добавлен в корзину!");
             Logger.Log($"Пользователь {UserSession.CurrentUserName} добавил товар ID={productId} в корзину");
         }
         catch (Exception ex)
         {
             MessageBox.Show("Ошибка добавления в корзину: " + ex.Message);
-        }
-        finally
-        {
-            checkCommand?.Dispose();
-            updateCommand?.Dispose();
-            insertCommand?.Dispose();
         }
     }
 
@@ -219,6 +217,6 @@ public partial class CatalogForm : Form
 
     private void InitializeComponent()
     {
-        // Для дизайнера
+
     }
 }

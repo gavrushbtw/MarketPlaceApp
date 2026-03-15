@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -17,12 +18,14 @@ namespace marketplaceApp
         DatabaseHelper db = new DatabaseHelper();
         public Form1()
         {
+            this.FormClosing += (s, e) => Application.Exit();
             InitializeComponent();
             this.CenterToScreen();
             this.SetGradientBackground(
                 Color.FromArgb(255, 183, 77), 
                 Color.FromArgb(255, 138, 101) 
             );
+            db.TestConnection();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -37,23 +40,24 @@ namespace marketplaceApp
 
         private void button1_Click(object sender, EventArgs e)
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             string email = textBox1.Text;
             string password = textBox2.Text;
 
             try
             {
-                using (SqlConnection connection = db.GetConnection())
+                using (NpgsqlConnection connection = db.GetConnection())
                 {
                     connection.Open();
 
-                    string query = "SELECT ID_пользователя, ФИО, Роль FROM Пользователи WHERE ЭлектроннаяПочта = @Email AND Пароль = @Password";
+                    string query = "SELECT \"ID_пользователя\", \"ФИО\", \"Роль\" FROM \"Пользователи\" WHERE \"ЭлектроннаяПочта\" = @Email AND \"Пароль\" = @Password";
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    using (NpgsqlCommand command = new NpgsqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@Email", email);
                         command.Parameters.AddWithValue("@Password", password);
 
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        using (NpgsqlDataReader reader = command.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -67,6 +71,8 @@ namespace marketplaceApp
                                 Navigation mainForm = new Navigation();
                                 mainForm.Show();
                                 this.Hide();
+                                sw.Stop();
+                                Logger.Log($"Время входа в систему: {sw.ElapsedMilliseconds} мс");
                             }
                             else
                             {
@@ -79,6 +85,7 @@ namespace marketplaceApp
             }
             catch (Exception ex)
             {
+                Logger.Log($"ОШИБКА входа: {ex.Message}");
                 MessageBox.Show("Ошибка входа: " + ex.Message);
             }
         }

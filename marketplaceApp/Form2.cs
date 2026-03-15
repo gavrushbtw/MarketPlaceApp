@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -31,7 +32,9 @@ namespace marketplaceApp
 
         private void label4_Click(object sender, EventArgs e)
         {
-            this.Close();
+            this.Hide();
+            Form1 form1 = new Form1();
+            form1.Show();
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -60,16 +63,16 @@ namespace marketplaceApp
 
             try
             {
-                using (SqlConnection connection = db.GetConnection())
+                using (NpgsqlConnection connection = db.GetConnection())
                 {
                     connection.Open();
-                    string query = @"INSERT INTO Пользователи (ЭлектроннаяПочта, Пароль, ФИО, Адрес) 
-                               VALUES (@Email, @Password, @FullName, @Address)";
+                    string query = @"INSERT INTO ""Пользователи"" (""ЭлектроннаяПочта"", ""Пароль"", ""ФИО"", ""Адрес"") 
+                                   VALUES (@Email, @Password, @FullName, @Address)";   
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    using (NpgsqlCommand command = new NpgsqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@Email", email);
-                        command.Parameters.AddWithValue("@Password", password); // В реальном приложении хэшируйте пароль!
+                        command.Parameters.AddWithValue("@Password", password); 
                         command.Parameters.AddWithValue("@FullName", fullName);
                         command.Parameters.AddWithValue("@Address", address);
 
@@ -78,19 +81,23 @@ namespace marketplaceApp
                         if (result > 0)
                         {
                             MessageBox.Show("Регистрация успешна!");
-                            this.Close();
+                            this.Hide();
+                            Form1 form1 = new Form1();
+                            form1.Show();
                         }
                     }
                 }
             }
-            catch (SqlException ex)
+            catch (Npgsql.PostgresException ex)
             {
-                if (ex.Number == 2627) // Ошибка уникальности
+                if (ex.SqlState == "23505")
                 {
                     MessageBox.Show("Пользователь с таким email уже существует");
+                    Logger.Log($"Попытка регистрации с существующим email: {email}");
                 }
                 else
                 {
+                    Logger.Log($"ОШИБКА регистрации: {ex.Message}");
                     MessageBox.Show("Ошибка регистрации: " + ex.Message);
                 }
             }
